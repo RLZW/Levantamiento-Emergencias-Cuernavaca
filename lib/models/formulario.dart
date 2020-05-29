@@ -33,4 +33,9 @@ class Formulario {
     this.foto,
     this.ubicacion,
   ]);
+
+  Map<String, dynamic> toJson() =>
+  {
+    
+  };
 }

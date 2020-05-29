@@ -1,5 +1,6 @@
 import 'package:connectivity/connectivity.dart';
 import 'package:flutter/material.dart';
+import 'package:location/location.dart';
 
 void main() {
   runApp(
@@ -35,6 +36,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  /** Variables Formulario */
   final _formKey = GlobalKey<FormState>();
   String num_reporte,
       fecha,
@@ -52,7 +54,7 @@ class _MyHomePageState extends State<MyHomePage> {
       foto,
       ubicacion,
       delegacion;
-
+  /** Obtener Fecha */
   DateTime selectedDate = DateTime.now();
   TimeOfDay time = TimeOfDay.now();
 
@@ -81,6 +83,7 @@ class _MyHomePageState extends State<MyHomePage> {
       });
   }
 
+  /** Checar conectividad del telefono */
   _checkConectivity() async {
     var connectivityResult = await (Connectivity().checkConnectivity());
 
@@ -93,6 +96,36 @@ class _MyHomePageState extends State<MyHomePage> {
     } else if (connectivityResult == ConnectivityResult.none) {
       //I am not connected to any network.
       return false;
+    }
+  }
+  /** Variables ubicación*/
+
+  Location location = new Location();
+  bool _serviceEnabled;
+  PermissionStatus _permissionGranted;
+  LocationData _locationData;
+
+  _checkLocationServiceAndPermissions() async {
+    _serviceEnabled = await location.serviceEnabled();
+    if (!_serviceEnabled) {
+      _serviceEnabled = await location.requestService();
+      if (!_serviceEnabled) {
+        print(false);
+        return false;
+      }
+    }
+    _permissionGranted = await location.hasPermission();
+    if (_permissionGranted == PermissionStatus.denied) {
+      _permissionGranted = await location.requestPermission();
+      if (_permissionGranted != PermissionStatus.granted) {
+        print(false);
+        return false;
+      }
+    }
+
+    if (_serviceEnabled & (_permissionGranted == PermissionStatus.granted)) {
+      print(true);
+      return true;
     }
   }
 
@@ -373,7 +406,6 @@ class _MyHomePageState extends State<MyHomePage> {
                 height: 15,
               ),
               DropdownButton<String>(
-                key: _formKey,
                 hint: Text('Departamento (necesario)'),
                 isExpanded: true,
                 value: departamento,
@@ -470,12 +502,17 @@ class _MyHomePageState extends State<MyHomePage> {
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 16.0),
                 child: RaisedButton(
-                  onPressed: () async  {
+                  onPressed: () async {
                     // Validate returns true if the form is valid, or false
                     // otherwise.
+                    if(await _checkLocationServiceAndPermissions()){
+                      _locationData = await location.getLocation();
+                      ;
+                      Scaffold.of(context).showSnackBar(
+                        SnackBar(content: Text('Wakanda ${_locationData.longitude} ${_locationData.latitude}')));
+                    }
                     bool value = await _checkConectivity();
-                    Scaffold.of(context).showSnackBar(
-                        SnackBar(content: Text('Wakanda ${value}')));
+                    
                     if (_formKey.currentState.validate()) {
                       // If the form is valid, display a Snackbar.
                       _formKey.currentState.save();
