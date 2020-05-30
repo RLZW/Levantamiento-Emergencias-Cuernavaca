@@ -1,41 +1,41 @@
 class Formulario {
-  String num_reporte,
+  String numReporte,
       fecha,
-      hora_salida,
-      hora_arribo,
+      horaSalida,
+      horaArribo,
       direccion,
       colonia,
-      tipo_fenomeno,
-      tipo_servicio,
+      tipoFenomeno,
+      tipoServicio,
       departamento,
-      numero_unidad,
-      reporte_problematica,
-      nombre_quienreporta,
+      numeroUnidad,
+      reporteProblematica,
+      nombreQuienReporta,
       observaciones,
       foto,
       ubicacion,
-      delegacion;
+      delegacion,
+      posicionX,
+      posicionY;
+
   Formulario([
-    this.num_reporte,
+    this.numReporte,
     this.fecha,
-    this.hora_salida,
-    this.hora_arribo,
+    this.horaSalida,
+    this.horaArribo,
     this.direccion,
     this.delegacion,
     this.colonia,
-    this.tipo_fenomeno,
-    this.tipo_servicio,
+    this.tipoFenomeno,
+    this.tipoServicio,
     this.departamento,
-    this.numero_unidad,
-    this.reporte_problematica,
-    this.nombre_quienreporta,
+    this.numeroUnidad,
+    this.reporteProblematica,
+    this.nombreQuienReporta,
     this.observaciones,
     this.foto,
     this.ubicacion,
   ]);
 
-  Map<String, dynamic> toJson() =>
-  {
-    
-  };
+  Map<String, dynamic> toJson() => {};
 }

@@ -1,5 +1,6 @@
 import 'package:connectivity/connectivity.dart';
 import 'package:flutter/material.dart';
+import 'package:levantamiento_incidentes_cuernavaca/Utils/form_values.dart';
 import 'package:location/location.dart';
 
 void main() {
@@ -36,25 +37,26 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  /** Variables Formulario */
+  /// Variables Formulario
   final _formKey = GlobalKey<FormState>();
-  String num_reporte,
+  String numReporte,
       fecha,
-      hora_salida,
-      hora_arribo,
+      horaSalida,
+      horaArribo,
       direccion,
       colonia,
-      tipo_fenomeno,
-      tipo_servicio,
+      tipoFenomeno,
+      tipoServicio,
       departamento,
-      numero_unidad,
-      reporte_problematica,
-      nombre_quienreporta,
+      numeroUnidad,
+      reporteProblematica,
+      nombreQuienReporta,
       observaciones,
       foto,
-      ubicacion,
       delegacion;
-  /** Obtener Fecha */
+  LocationData ubicacion;
+
+  ///Obtener fecha
   DateTime selectedDate = DateTime.now();
   TimeOfDay time = TimeOfDay.now();
 
@@ -83,7 +85,7 @@ class _MyHomePageState extends State<MyHomePage> {
       });
   }
 
-  /** Checar conectividad del telefono */
+  ///Checar Conectividad Teléfono
   _checkConectivity() async {
     var connectivityResult = await (Connectivity().checkConnectivity());
 
@@ -98,8 +100,8 @@ class _MyHomePageState extends State<MyHomePage> {
       return false;
     }
   }
-  /** Variables ubicación*/
 
+  ///Variables de Ubicación
   Location location = new Location();
   bool _serviceEnabled;
   PermissionStatus _permissionGranted;
@@ -146,14 +148,8 @@ class _MyHomePageState extends State<MyHomePage> {
               TextFormField(
                 decoration: InputDecoration(labelText: 'Número de reporte'),
                 onSaved: (String value) {
-                  num_reporte = value;
+                  numReporte = value;
                 },
-                /* validator: (value) {
-                  if (value.isEmpty) {
-                    return 'Por favor llena el campo solicitado.';
-                  }
-                  return null;
-                }, */
               ),
               SizedBox(
                 height: 15,
@@ -175,14 +171,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 decoration:
                     InputDecoration(labelText: 'Hora de salida de la unidad'),
                 onSaved: (String value) {
-                  hora_salida = value;
+                  horaSalida = value;
                 },
-                /* validator: (value) {
-                  if (value.isEmpty) {
-                    return 'Por favor llena el campo solicitado.';
-                  }
-                  return null;
-                }, */
               ),
               SizedBox(
                 height: 15,
@@ -191,14 +181,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 decoration:
                     InputDecoration(labelText: 'Hora de arribo de la unidad'),
                 onSaved: (String value) {
-                  hora_arribo = value;
+                  horaArribo = value;
                 },
-                /* validator: (value) {
-                  if (value.isEmpty) {
-                    return 'Por favor llena el campo solicitado.';
-                  }
-                  return null;
-                }, */
               ),
               SizedBox(
                 height: 15,
@@ -208,12 +192,6 @@ class _MyHomePageState extends State<MyHomePage> {
                 onSaved: (String value) {
                   direccion = value;
                 },
-                /* validator: (value) {
-                  if (value.isEmpty) {
-                    return 'Por favor llena el campo solicitado.';
-                  }
-                  return null;
-                }, */
               ),
               SizedBox(
                 height: 15,
@@ -223,12 +201,6 @@ class _MyHomePageState extends State<MyHomePage> {
                 onSaved: (String value) {
                   colonia = value;
                 },
-                /* validator: (value) {
-                  if (value.isEmpty) {
-                    return 'Por favor llena el campo solicitado.';
-                  }
-                  return null;
-                }, */
               ),
               SizedBox(
                 height: 15,
@@ -250,17 +222,8 @@ class _MyHomePageState extends State<MyHomePage> {
                     delegacion = newValue;
                   });
                 },
-                items: <String>[
-                  'ANTONIO BARONA',
-                  'BENITO JUAREZ',
-                  'EMILIANO ZAPATA',
-                  'LAZARO CÁRDENAS',
-                  'MARIANO MATAMOROS',
-                  'MIGUEL HIDALGO',
-                  'PLUTARCO ELIAS CALLES',
-                  'VICENTE GUERRERO',
-                  'REVOLUCIÓN'
-                ].map<DropdownMenuItem<String>>((String value) {
+                items: lista_delegaciones
+                    .map<DropdownMenuItem<String>>((String value) {
                   return DropdownMenuItem<String>(
                     value: value,
                     child: Text(value),
@@ -273,7 +236,7 @@ class _MyHomePageState extends State<MyHomePage> {
               DropdownButton<String>(
                 hint: Text('Tipo de Fenómeno'),
                 isExpanded: true,
-                value: tipo_fenomeno,
+                value: tipoFenomeno,
                 icon: Icon(Icons.arrow_downward),
                 iconSize: 24,
                 elevation: 16,
@@ -284,17 +247,11 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
                 onChanged: (String newValue) {
                   setState(() {
-                    tipo_fenomeno = newValue;
+                    tipoFenomeno = newValue;
                   });
                 },
-                items: <String>[
-                  'Geológico',
-                  'Hidrometereológico',
-                  'Sanitario-Ecológico',
-                  'Quimico-Tecnológico',
-                  'Socio organizativo',
-                  'Astronómico'
-                ].map<DropdownMenuItem<String>>((String value) {
+                items: lista_fenomenos_geologicos
+                    .map<DropdownMenuItem<String>>((String value) {
                   return DropdownMenuItem<String>(
                     value: value,
                     child: Text(value),
@@ -307,7 +264,7 @@ class _MyHomePageState extends State<MyHomePage> {
               DropdownButton<String>(
                 hint: Text('Tipo de servicio'),
                 isExpanded: true,
-                value: tipo_servicio,
+                value: tipoServicio,
                 icon: Icon(Icons.arrow_downward),
                 iconSize: 24,
                 elevation: 16,
@@ -318,84 +275,11 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
                 onChanged: (String newValue) {
                   setState(() {
-                    tipo_servicio = newValue;
+                    tipoServicio = newValue;
                   });
                 },
-                items: <String>[
-                  'ACCIDENTE AUTOMOVILISTICO',
-                  'ACCIDENTE DE TRABAJO',
-                  'AMENAZA DE BOMBA',
-                  'ÁRBOL COLAPSADO',
-                  'ÁRBOL EN RIESGO',
-                  'BARDA COLAPSADA',
-                  'BARDA EN RIESGO',
-                  'BARRANCA AZOLVADA',
-                  'CABLES CAÍDOS',
-                  'CAPTURA DE ANIMALES',
-                  'CONSTRUCCIÓN EN RIESGO',
-                  'CORTO CIRCUITO',
-                  'DERRAME EN VÍA PÚBLICA',
-                  'DERRUMBE',
-                  'ELECTROCUTADO',
-                  'ENJAMBRE',
-                  'ESTABLECIMIENTO IRREGULAR',
-                  'EXPLOSIÓN',
-                  'FALSA ALARMA',
-                  'FUGA DE GAS L.P.',
-                  'INCENDIO CASA HABITACIÓN',
-                  'INCENDIO ESTABLECIMIENTO',
-                  'INCENDIO TERRENO BALDÍO',
-                  'INCENDIO VEHÍCULO',
-                  'INTENTO DE SUICIDIO',
-                  'INUNDACIÓN CASA HABITACIÓN',
-                  'INUNDACIÓN CALLE',
-                  'INUNDACIÓN ESTABLECIMIENTO',
-                  'NOTIFICACIÓN',
-                  'OLOR AMBIENTE DESAGRADABLE Y/O CONTAMINANTE',
-                  'OPERATIVO DE SEGURIDAD',
-                  'POSTE COLAPSADO',
-                  'POSTE EN RIESGO',
-                  'QUEMA DE BASURA',
-                  'RAMA COLAPSADA',
-                  'RESCATE DE PERSONA',
-                  'RECORRIDOS',
-                  'REGISTROS EN MAL ESTADO Y/O SIN TAPADERA',
-                  'SEGUIMIENTO DE EMERGENCIA',
-                  'ALCANTARRILLA EN RIESGO',
-                  'ANUNCIO ESPECTACULAR EN RIESGO',
-                  'ANTENA EN RIESGO Y/O SIN PERMISO DE COLOCACIÓN',
-                  'DRENAJE TAPADO Y/O EN RIESGO',
-                  'FILTRACIONES DE AGUA',
-                  'HUNDIMIENTO CINTA ASFALTICA',
-                  'IMPLEMENTACIÓN MEDIDAS DE SEGURIDAD.',
-                  'ESPECTACULAR EN RIESGO',
-                  'OBSTRUCCION DE BARRANCA',
-                  'OLOR A GAS L.P.',
-                  'PANEL ELECTRICO EN RIESGO',
-                  'RAMA EN RIESGO',
-                  'SEGUIMIENTO DE SERVICIO',
-                  'SISTEMA CAPTACIÓN DE AGUA PLUVIAL MAL ESTADO',
-                  'TALUD Y/O PAREDON EN RIESGO',
-                  'FUGA DE AGUA POTABLE',
-                  'FUGA DE AGUA DRENAJE',
-                  'INCENDIO FORESTAL',
-                  'FERIA',
-                  'TOMA CLANDESTINA',
-                  'SISMO',
-                  'OBJETO PELIGROSO EN VÍA PÚBLICA',
-                  'OLOR A GASOLINA',
-                  'TRONCO SECO',
-                  'QUEMA DE PIROTECNIA',
-                  'TRANSPORTE MATERIAL PELIGROSO',
-                  'QUEMA DE PASTIZAL',
-                  'SEMAFORO EN RIESGO',
-                  'FUMIGACION MANIOBRAS',
-                  'PERSONA LESIONADA',
-                  'SIMULACROS',
-                  'MANIOBRA RETIRO DE TANQUE ESTACIONARIO',
-                  'SERVICIO SOCIAL',
-                  'OTRO'
-                ].map<DropdownMenuItem<String>>((String value) {
+                items: lista_tipo_servicios
+                    .map<DropdownMenuItem<String>>((String value) {
                   return DropdownMenuItem<String>(
                     value: value,
                     child: Text(value),
@@ -422,15 +306,8 @@ class _MyHomePageState extends State<MyHomePage> {
                     departamento = newValue;
                   });
                 },
-                items: <String>[
-                  'DEMANDA CIUDADANA',
-                  'EMERGENCIA',
-                  'NOTIFICACION',
-                  'OPERATIVO DE SEGURIDAD',
-                  'SIMULACRO',
-                  'VERIFICACION',
-                  'BOMBEROS'
-                ].map<DropdownMenuItem<String>>((String value) {
+                items: lista_departamentos
+                    .map<DropdownMenuItem<String>>((String value) {
                   return DropdownMenuItem<String>(
                     value: value,
                     child: Text(value),
@@ -443,14 +320,8 @@ class _MyHomePageState extends State<MyHomePage> {
               TextFormField(
                 decoration: InputDecoration(labelText: 'Número de Unidad'),
                 onSaved: (String value) {
-                  numero_unidad = value;
+                  numeroUnidad = value;
                 },
-                /* validator: (value) {
-                  if (value.isEmpty) {
-                    return 'Por favor llena el campo solicitado.';
-                  }
-                  return null;
-                }, */
               ),
               SizedBox(
                 height: 15,
@@ -459,14 +330,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 decoration:
                     InputDecoration(labelText: 'Reporte o problemática'),
                 onSaved: (String value) {
-                  reporte_problematica = value;
+                  reporteProblematica = value;
                 },
-                /* validator: (value) {
-                  if (value.isEmpty) {
-                    return 'Por favor llena el campo solicitado.';
-                  }
-                  return null;
-                }, */
               ),
               SizedBox(
                 height: 15,
@@ -475,14 +340,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 decoration:
                     InputDecoration(labelText: 'Nombre de quién reporta'),
                 onSaved: (String value) {
-                  nombre_quienreporta = value;
+                  nombreQuienReporta = value;
                 },
-                /*  validator: (value) {
-                  if (value.isEmpty) {
-                    return 'Por favor llena el campo solicitado.';
-                  }
-                  return null;
-                }, */
               ),
               SizedBox(
                 height: 15,
@@ -490,14 +349,39 @@ class _MyHomePageState extends State<MyHomePage> {
               TextFormField(
                 decoration: InputDecoration(labelText: 'Observaciones'),
                 onSaved: (String value) {
-                  hora_salida = value;
+                  horaSalida = value;
                 },
-                /* validator: (value) {
-                  if (value.isEmpty) {
-                    return 'Por favor llena el campo solicitado.';
-                  }
-                  return null;
-                }, */
+              ),
+              SizedBox(
+                height: 15,
+              ),
+              Row(
+                children: <Widget>[
+                  Text(() {
+                    if (ubicacion == null) {
+                      return "No se ha obtenido la ubicación aún.";
+                    } else {
+                      return 'Ubicación ${ubicacion.latitude},${ubicacion.longitude}';
+                    }
+                  }()),
+                  SizedBox(
+                    width: 20.0,
+                  ),
+                  RaisedButton(
+                    onPressed: () async {
+                      if (await _checkLocationServiceAndPermissions()) {
+                        _locationData = await location.getLocation();
+                        setState(() {
+                          ubicacion = _locationData;
+                        });
+                        Scaffold.of(context).showSnackBar(SnackBar(
+                            content: Text(
+                                'Wakanda ${_locationData.longitude} ${_locationData.latitude}')));
+                      }
+                    },
+                    child: Text('Localizarme'),
+                  ),
+                ],
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 16.0),
@@ -505,17 +389,32 @@ class _MyHomePageState extends State<MyHomePage> {
                   onPressed: () async {
                     // Validate returns true if the form is valid, or false
                     // otherwise.
-                    if(await _checkLocationServiceAndPermissions()){
-                      _locationData = await location.getLocation();
-                      ;
-                      Scaffold.of(context).showSnackBar(
-                        SnackBar(content: Text('Wakanda ${_locationData.longitude} ${_locationData.latitude}')));
-                    }
-                    bool value = await _checkConectivity();
-                    
                     if (_formKey.currentState.validate()) {
-                      // If the form is valid, display a Snackbar.
+                      // If the form is valid
                       _formKey.currentState.save();
+                      bool isConnected = await _checkConectivity();
+                      if (isConnected) {
+                      } else {
+                        return showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: new Text("No hay internet"),
+                              content: new Text(
+                                  "Parece ser que no estas conectado a internet, tu reporte y su información será guardado en el dispostivo y podrá ser subido una vez que cuentes con internet."),
+                              actions: <Widget>[
+                                // usually buttons at the bottom of the dialog
+                                new FlatButton(
+                                  child: new Text("Aceptar"),
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                  },
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                      }
                     }
                   },
                   child: Text('Enviar'),
