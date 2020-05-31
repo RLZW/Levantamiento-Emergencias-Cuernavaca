@@ -1,7 +1,13 @@
-import 'package:connectivity/connectivity.dart';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:levantamiento_incidentes_cuernavaca/Utils/form_values.dart';
 import 'package:location/location.dart';
+
+import 'Utils/checkConectivity.dart';
+import 'Utils/checkLocationServicesAndPermissions.dart';
+import 'package:transparent_image/transparent_image.dart';
 
 void main() {
   runApp(
@@ -60,6 +66,7 @@ class _MyHomePageState extends State<MyHomePage> {
   DateTime selectedDate = DateTime.now();
   TimeOfDay time = TimeOfDay.now();
 
+  //Función para seleccionar la fecha completa, se complementa con la función selectDate la cual nos regresa año, mes y día, esta función añade horas y minutos.
   Future<Null> _selectTime(BuildContext context) async {
     final TimeOfDay picked =
         await showTimePicker(context: context, initialTime: time);
@@ -72,6 +79,7 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  ///Función para seleccionar Año, Mes y Día y guardarlos en selectedDate.
   Future<Null> _selectDate(BuildContext context) async {
     final DateTime picked = await showDatePicker(
         context: context,
@@ -85,50 +93,37 @@ class _MyHomePageState extends State<MyHomePage> {
       });
   }
 
-  ///Checar Conectividad Teléfono
-  _checkConectivity() async {
-    var connectivityResult = await (Connectivity().checkConnectivity());
-
-    if (connectivityResult == ConnectivityResult.mobile) {
-      // I am connected to a mobile network.
-      return true;
-    } else if (connectivityResult == ConnectivityResult.wifi) {
-      // I am connected to a wifi network.
-      return true;
-    } else if (connectivityResult == ConnectivityResult.none) {
-      //I am not connected to any network.
-      return false;
-    }
-  }
-
   ///Variables de Ubicación
   Location location = new Location();
-  bool _serviceEnabled;
-  PermissionStatus _permissionGranted;
   LocationData _locationData;
 
-  _checkLocationServiceAndPermissions() async {
-    _serviceEnabled = await location.serviceEnabled();
-    if (!_serviceEnabled) {
-      _serviceEnabled = await location.requestService();
-      if (!_serviceEnabled) {
-        print(false);
-        return false;
-      }
-    }
-    _permissionGranted = await location.hasPermission();
-    if (_permissionGranted == PermissionStatus.denied) {
-      _permissionGranted = await location.requestPermission();
-      if (_permissionGranted != PermissionStatus.granted) {
-        print(false);
-        return false;
-      }
-    }
+  ///Variables Image Picker
+  List<File> images = List<File>();
+  final picker = ImagePicker();
 
-    if (_serviceEnabled & (_permissionGranted == PermissionStatus.granted)) {
-      print(true);
-      return true;
+  getImagesWidget() {
+    var imagenes = <Widget>[Container()];
+    for (var image in images) {
+      imagenes.add(Image.file(image, width: 300, height: 300));
     }
+    return imagenes;
+  }
+
+  Future getImageFromCamera() async {
+    final pickedFile = await picker.getImage(source: ImageSource.camera);
+
+    setState(() {
+      print('${File(pickedFile.path)}');
+      images.add(File(pickedFile.path));
+    });
+  }
+
+  Future getImageFromGallery() async {
+    final pickedFile = await picker.getImage(source: ImageSource.gallery);
+    setState(() {
+      print('${File(pickedFile.path)}');
+      images.add(File(pickedFile.path));
+    });
   }
 
   @override
@@ -163,7 +158,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                   RaisedButton(
                     onPressed: () => _selectDate(context),
-                    child: Text('Cambiar Fecha'),
+                    child: Icon(Icons.edit),
                   ),
                 ],
               ),
@@ -369,7 +364,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                   RaisedButton(
                     onPressed: () async {
-                      if (await _checkLocationServiceAndPermissions()) {
+                      if (await checkLocationServiceAndPermissions(location)) {
                         _locationData = await location.getLocation();
                         setState(() {
                           ubicacion = _locationData;
@@ -383,41 +378,104 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                 ],
               ),
+              SizedBox(
+                height: 15,
+              ),
+              GridView.builder(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                  ),
+                  primary: false,
+                  shrinkWrap: true,
+                  itemCount: images.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    return Container(
+                      child: Stack(
+                        alignment: Alignment.bottomCenter,
+                        children: <Widget>[
+                          FadeInImage(
+                            placeholder: MemoryImage(kTransparentImage),
+                            image: Image.file(images[index]).image,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            height: double.infinity,
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(4.0),
+                            child: Align(
+                              child: Container(
+                                  child: FloatingActionButton(
+                                      onPressed: () {
+                                        images.remove(images[index]);
+                                        setState(() {
+                                          
+                                        });
+                                      },
+                                      child: Icon(Icons.delete)),
+                                  width: 35,
+                                  height: 35,),
+                              alignment: Alignment.bottomRight,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+              Align(
+                alignment: Alignment.center,
+                child: RaisedButton.icon(
+                    onPressed: getImageFromGallery,
+                    icon: Icon(Icons.folder),
+                    label: Text('Fotografia desde Galeria (Opcional)')),
+              ),
+              SizedBox(
+                height: 15,
+              ),
+              Align(
+                alignment: Alignment.center,
+                child: RaisedButton.icon(
+                    onPressed: getImageFromCamera,
+                    icon: Icon(Icons.add_a_photo),
+                    label: Text('Fotografia desde Cámara (Opcional)')),
+              ),
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 16.0),
-                child: RaisedButton(
-                  onPressed: () async {
-                    // Validate returns true if the form is valid, or false
-                    // otherwise.
-                    if (_formKey.currentState.validate()) {
-                      // If the form is valid
-                      _formKey.currentState.save();
-                      bool isConnected = await _checkConectivity();
-                      if (isConnected) {
-                      } else {
-                        return showDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return AlertDialog(
-                              title: new Text("No hay internet"),
-                              content: new Text(
-                                  "Parece ser que no estas conectado a internet, tu reporte y su información será guardado en el dispostivo y podrá ser subido una vez que cuentes con internet."),
-                              actions: <Widget>[
-                                // usually buttons at the bottom of the dialog
-                                new FlatButton(
-                                  child: new Text("Aceptar"),
-                                  onPressed: () {
-                                    Navigator.of(context).pop();
-                                  },
-                                ),
-                              ],
-                            );
-                          },
-                        );
+                child: SizedBox(
+                  width: double.infinity,
+                  child: RaisedButton(
+                    onPressed: () async {
+                      // Validate returns true if the form is valid, or false
+                      // otherwise.
+                      if (_formKey.currentState.validate()) {
+                        // If the form is valid
+                        _formKey.currentState.save();
+                        bool isConnected = await checkConectivity();
+                        if (isConnected) {
+                        } else {
+                          return showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                title: new Text("No hay internet"),
+                                content: new Text(
+                                    "Parece ser que no estas conectado a internet, tu reporte y su información será guardado en el dispostivo y podrá ser subido una vez que cuentes con internet."),
+                                actions: <Widget>[
+                                  // usually buttons at the bottom of the dialog
+                                  new FlatButton(
+                                    child: new Text("Aceptar"),
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                    },
+                                  ),
+                                ],
+                              );
+                            },
+                          );
+                        }
                       }
-                    }
-                  },
-                  child: Text('Enviar'),
+                    },
+                    child: Text('Enviar'),
+                  ),
                 ),
               ),
             ],
