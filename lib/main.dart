@@ -1,13 +1,21 @@
-import 'dart:io';
+import 'dart:convert';
+import 'dart:io' as io;
+import 'package:path/path.dart';
+import 'package:async/async.dart';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:levantamiento_incidentes_cuernavaca/Utils/form_values.dart';
+import 'package:levantamiento_incidentes_cuernavaca/models/formulario.dart';
 import 'package:location/location.dart';
+import 'package:http/http.dart' as http;
 
 import 'Utils/checkConectivity.dart';
 import 'Utils/checkLocationServicesAndPermissions.dart';
 import 'package:transparent_image/transparent_image.dart';
+
+import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 void main() {
   runApp(
@@ -26,6 +34,12 @@ class MyApp extends StatelessWidget {
       home: Scaffold(
         appBar: AppBar(
           title: Text("Levantamiento de Incidentes Cuernavaca"),
+          actions: <Widget>[
+            IconButton(
+              icon: Icon(Icons.cloud_upload),
+              onPressed: () {},
+            ),
+          ],
         ),
         body: MyHomePage(title: 'Levantamiento de Emergencias Cuernavaca'),
       ),
@@ -46,20 +60,21 @@ class _MyHomePageState extends State<MyHomePage> {
   /// Variables Formulario
   final _formKey = GlobalKey<FormState>();
   String numReporte,
-      fecha,
       horaSalida,
       horaArribo,
       direccion,
       colonia,
-      tipoFenomeno,
-      tipoServicio,
-      departamento,
       numeroUnidad,
       reporteProblematica,
       nombreQuienReporta,
       observaciones,
-      foto,
-      delegacion;
+      foto;
+  int delegacion = 0,
+      tipoFenomeno = 0,
+      tipoServicio = 0,
+      departamento = 0,
+      fecha = DateTime.now().millisecondsSinceEpoch;
+
   LocationData ubicacion;
 
   ///Obtener fecha
@@ -75,8 +90,29 @@ class _MyHomePageState extends State<MyHomePage> {
         time = picked;
         selectedDate = new DateTime(selectedDate.year, selectedDate.month,
             selectedDate.day, time.hour, time.minute);
+        debugPrint(selectedDate.toString());
+        fecha = selectedDate.millisecondsSinceEpoch;
       });
     }
+  }
+
+  uploadImage(io.File imageFile, String uploadURL) async {
+    var stream =
+        new http.ByteStream(DelegatingStream.typed(imageFile.openRead()));
+    var length = await imageFile.length();
+
+    var uri = Uri.parse(uploadURL);
+
+    var request = new http.MultipartRequest("POST", uri);
+    var multipartFile = new http.MultipartFile('file', stream, length,
+        filename: basename(imageFile.path));
+    request.files.add(multipartFile);
+    var response = await request.send();
+    print(response.statusCode);
+    print(response.toString());
+    response.stream.transform(utf8.decoder).listen((value) {
+      print(value);
+    });
   }
 
   ///Función para seleccionar Año, Mes y Día y guardarlos en selectedDate.
@@ -98,7 +134,7 @@ class _MyHomePageState extends State<MyHomePage> {
   LocationData _locationData;
 
   ///Variables Image Picker
-  List<File> images = List<File>();
+  List<io.File> images = List<io.File>();
   final picker = ImagePicker();
 
   getImagesWidget() {
@@ -113,16 +149,16 @@ class _MyHomePageState extends State<MyHomePage> {
     final pickedFile = await picker.getImage(source: ImageSource.camera);
 
     setState(() {
-      print('${File(pickedFile.path)}');
-      images.add(File(pickedFile.path));
+      print('${io.File(pickedFile.path)}');
+      images.add(io.File(pickedFile.path));
     });
   }
 
   Future getImageFromGallery() async {
     final pickedFile = await picker.getImage(source: ImageSource.gallery);
     setState(() {
-      print('${File(pickedFile.path)}');
-      images.add(File(pickedFile.path));
+      print('${io.File(pickedFile.path)}');
+      images.add(io.File(pickedFile.path));
     });
   }
 
@@ -203,18 +239,18 @@ class _MyHomePageState extends State<MyHomePage> {
               DropdownButton<String>(
                 hint: Text('Seleccionar Delegación'),
                 isExpanded: true,
-                value: delegacion,
+                value: lista_delegaciones[delegacion],
                 icon: Icon(Icons.arrow_downward),
                 iconSize: 24,
                 elevation: 16,
                 style: TextStyle(color: Colors.deepPurple),
                 underline: Container(
                   height: 2,
-                  color: Colors.deepPurpleAccent,
+                  color: Colors.blue,
                 ),
                 onChanged: (String newValue) {
                   setState(() {
-                    delegacion = newValue;
+                    delegacion = lista_delegaciones.indexOf(newValue);
                   });
                 },
                 items: lista_delegaciones
@@ -231,18 +267,18 @@ class _MyHomePageState extends State<MyHomePage> {
               DropdownButton<String>(
                 hint: Text('Tipo de Fenómeno'),
                 isExpanded: true,
-                value: tipoFenomeno,
+                value: lista_fenomenos_geologicos[tipoFenomeno],
                 icon: Icon(Icons.arrow_downward),
                 iconSize: 24,
                 elevation: 16,
                 style: TextStyle(color: Colors.deepPurple),
                 underline: Container(
                   height: 2,
-                  color: Colors.deepPurpleAccent,
+                  color: Colors.blue,
                 ),
                 onChanged: (String newValue) {
                   setState(() {
-                    tipoFenomeno = newValue;
+                    tipoFenomeno = lista_fenomenos_geologicos.indexOf(newValue);
                   });
                 },
                 items: lista_fenomenos_geologicos
@@ -259,18 +295,18 @@ class _MyHomePageState extends State<MyHomePage> {
               DropdownButton<String>(
                 hint: Text('Tipo de servicio'),
                 isExpanded: true,
-                value: tipoServicio,
+                value: lista_tipo_servicios[tipoServicio],
                 icon: Icon(Icons.arrow_downward),
                 iconSize: 24,
                 elevation: 16,
                 style: TextStyle(color: Colors.deepPurple),
                 underline: Container(
                   height: 2,
-                  color: Colors.deepPurpleAccent,
+                  color: Colors.blue,
                 ),
                 onChanged: (String newValue) {
                   setState(() {
-                    tipoServicio = newValue;
+                    tipoServicio = lista_tipo_servicios.indexOf(newValue);
                   });
                 },
                 items: lista_tipo_servicios
@@ -287,18 +323,18 @@ class _MyHomePageState extends State<MyHomePage> {
               DropdownButton<String>(
                 hint: Text('Departamento (necesario)'),
                 isExpanded: true,
-                value: departamento,
+                value: lista_departamentos[departamento],
                 icon: Icon(Icons.arrow_downward),
                 iconSize: 24,
                 elevation: 16,
                 style: TextStyle(color: Colors.deepPurple),
                 underline: Container(
                   height: 2,
-                  color: Colors.deepPurpleAccent,
+                  color: Colors.blue,
                 ),
                 onChanged: (String newValue) {
                   setState(() {
-                    departamento = newValue;
+                    departamento = lista_departamentos.indexOf(newValue);
                   });
                 },
                 items: lista_departamentos
@@ -344,7 +380,7 @@ class _MyHomePageState extends State<MyHomePage> {
               TextFormField(
                 decoration: InputDecoration(labelText: 'Observaciones'),
                 onSaved: (String value) {
-                  horaSalida = value;
+                  observaciones = value;
                 },
               ),
               SizedBox(
@@ -371,7 +407,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         });
                         Scaffold.of(context).showSnackBar(SnackBar(
                             content: Text(
-                                'Wakanda ${_locationData.longitude} ${_locationData.latitude}')));
+                                'Ubicación Actualizada ${_locationData.longitude} ${_locationData.latitude}')));
                       }
                     },
                     child: Text('Localizarme'),
@@ -404,16 +440,15 @@ class _MyHomePageState extends State<MyHomePage> {
                             padding: const EdgeInsets.all(4.0),
                             child: Align(
                               child: Container(
-                                  child: FloatingActionButton(
-                                      onPressed: () {
-                                        images.remove(images[index]);
-                                        setState(() {
-                                          
-                                        });
-                                      },
-                                      child: Icon(Icons.delete)),
-                                  width: 35,
-                                  height: 35,),
+                                child: FloatingActionButton(
+                                    onPressed: () {
+                                      images.remove(images[index]);
+                                      setState(() {});
+                                    },
+                                    child: Icon(Icons.delete)),
+                                width: 35,
+                                height: 35,
+                              ),
                               alignment: Alignment.bottomRight,
                             ),
                           ),
@@ -450,7 +485,64 @@ class _MyHomePageState extends State<MyHomePage> {
                         // If the form is valid
                         _formKey.currentState.save();
                         bool isConnected = await checkConectivity();
+
+                        Formulario formulario = Formulario(
+                            numReporte,
+                            fecha,
+                            horaSalida.toString(),
+                            '2',
+                            direccion,
+                            delegacion + 1,
+                            colonia,
+                            tipoFenomeno + 1,
+                            tipoServicio + 1,
+                            departamento + 1,
+                            numeroUnidad,
+                            reporteProblematica,
+                            nombreQuienReporta,
+                            observaciones,
+                            ' ',
+                            ubicacion.latitude.toString(),
+                            ubicacion.longitude.toString());
                         if (isConnected) {
+                          String url =
+                              'https://services9.arcgis.com/fp5f46XvVGKIUi0R/ArcGIS/rest/services/Levantamiento_Emergencias/FeatureServer/0/addFeatures';
+                          var map = new Map<String, dynamic>();
+                          map['features'] = json.encode(formulario.toJson());
+                          map['rollbackOnFailure'] = 'false';
+                          map['f'] = 'pjson';
+                          map['token'] = '';
+                          debugPrint(json.encode(map));
+                          var response = await http.post(url, body: map);
+                          debugPrint('Response status: ${response.statusCode}');
+                          debugPrint('Response body: ${response.body}');
+                          bool success;
+                          try {
+                            success = json.decode(response.body)["addResults"]
+                                [0]["success"];
+                          } catch (e) {
+                            success = false;
+                          }
+                          if (success) {
+                            Scaffold.of(context).showSnackBar(SnackBar(
+                              content: Text(
+                                'Reporte subido con éxito.',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                              backgroundColor: Colors.green,
+                            ));
+                            if (images.length != 0) {
+                              int objectId =
+                                  json.decode(response.body)["addResults"][0]
+                                      ["objectId"];
+                              String urlImage =
+                                  'https://services9.arcgis.com/fp5f46XvVGKIUi0R/arcgis/rest/services/Levantamiento_Emergencias/FeatureServer/0/$objectId/addAttachment';
+                              debugPrint(urlImage);
+                              for (var image in images) {
+                                uploadImage(image, urlImage);
+                              }
+                            }
+                          } else {}
                         } else {
                           return showDialog(
                             context: context,
@@ -463,7 +555,10 @@ class _MyHomePageState extends State<MyHomePage> {
                                   // usually buttons at the bottom of the dialog
                                   new FlatButton(
                                     child: new Text("Aceptar"),
-                                    onPressed: () {
+                                    onPressed: () async {
+                                      await Hive.initFlutter();
+                                      var box = await Hive.openBox('testBox');
+
                                       Navigator.of(context).pop();
                                     },
                                   ),
