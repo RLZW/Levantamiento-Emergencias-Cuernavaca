@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io' as io;
+import 'package:levantamiento_incidentes_cuernavaca/screens/formspendientes.dart';
 import 'package:path/path.dart';
 import 'package:async/async.dart';
 
@@ -7,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:levantamiento_incidentes_cuernavaca/Utils/form_values.dart';
 import 'package:levantamiento_incidentes_cuernavaca/models/formulario.dart';
+import 'package:levantamiento_incidentes_cuernavaca/models/formulariohive.model.dart';
 import 'package:location/location.dart';
 import 'package:http/http.dart' as http;
 
@@ -17,7 +19,12 @@ import 'package:transparent_image/transparent_image.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
-void main() {
+void main() async {
+  Hive.registerAdapter(FormularioHiveAdapter());
+
+  await Hive.initFlutter();
+  await Hive.openBox('formularioBox');
+
   runApp(
     MyApp(),
   );
@@ -27,23 +34,11 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Levantamiento de Emergencias Cuernavaca',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: Scaffold(
-        appBar: AppBar(
-          title: Text("Levantamiento de Incidentes Cuernavaca"),
-          actions: <Widget>[
-            IconButton(
-              icon: Icon(Icons.cloud_upload),
-              onPressed: () {},
-            ),
-          ],
+        title: 'Levantamiento de Emergencias Cuernavaca',
+        theme: ThemeData(
+          primarySwatch: Colors.blue,
         ),
-        body: MyHomePage(title: 'Levantamiento de Emergencias Cuernavaca'),
-      ),
-    );
+        home: MyHomePage(title: 'Levantamiento Emergencias Cuernavaca'));
   }
 }
 
@@ -76,6 +71,8 @@ class _MyHomePageState extends State<MyHomePage> {
       fecha = DateTime.now().millisecondsSinceEpoch;
 
   LocationData ubicacion;
+
+  ///Guardado Local
 
   ///Obtener fecha
   DateTime selectedDate = DateTime.now();
@@ -133,8 +130,11 @@ class _MyHomePageState extends State<MyHomePage> {
   Location location = new Location();
   LocationData _locationData;
 
+  Box _formularioBox = Hive.box('formularioBox');
+
   ///Variables Image Picker
   List<io.File> images = List<io.File>();
+  List<String> images64 = List<String>();
   final picker = ImagePicker();
 
   getImagesWidget() {
@@ -151,6 +151,7 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       print('${io.File(pickedFile.path)}');
       images.add(io.File(pickedFile.path));
+      images64.add(base64.encode(io.File(pickedFile.path).readAsBytesSync()));
     });
   }
 
@@ -159,12 +160,41 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       print('${io.File(pickedFile.path)}');
       images.add(io.File(pickedFile.path));
+      images64.add(base64.encode(io.File(pickedFile.path).readAsBytesSync()));
     });
   }
 
   @override
+  void initState() {
+    super.initState();
+  }
+
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
+      appBar: AppBar(
+        title: Text("Levantamiento de Incidentes Cuernavaca"),
+        actions: <Widget>[
+          IconButton(
+            icon: Icon(Icons.cloud_upload),
+            onPressed: () async {
+              bool isConnected = await checkConectivity();
+              if (isConnected) {
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => PendientesPage()));
+              } else {
+                _scaffoldKey.currentState.showSnackBar(SnackBar(
+                  content: Text(
+                    'No estás conectado a internet para ingresar.',
+                  ),
+                ));
+              }
+            },
+          ),
+        ],
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(8.0),
         child: Form(
@@ -405,7 +435,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         setState(() {
                           ubicacion = _locationData;
                         });
-                        Scaffold.of(context).showSnackBar(SnackBar(
+                        _scaffoldKey.currentState.showSnackBar(SnackBar(
                             content: Text(
                                 'Ubicación Actualizada ${_locationData.longitude} ${_locationData.latitude}')));
                       }
@@ -442,8 +472,13 @@ class _MyHomePageState extends State<MyHomePage> {
                               child: Container(
                                 child: FloatingActionButton(
                                     onPressed: () {
+                                      print(images64.toString());
                                       images.remove(images[index]);
-                                      setState(() {});
+                                      images64.remove(images64[index]);
+                                      print(images64.toString());
+
+                                      setState(() {
+                                      });
                                     },
                                     child: Icon(Icons.delete)),
                                 width: 35,
@@ -524,7 +559,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             success = false;
                           }
                           if (success) {
-                            Scaffold.of(context).showSnackBar(SnackBar(
+                            _scaffoldKey.currentState.showSnackBar(SnackBar(
                               content: Text(
                                 'Reporte subido con éxito.',
                                 style: TextStyle(color: Colors.white),
@@ -542,7 +577,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                 uploadImage(image, urlImage);
                               }
                             }
-                          } else {}
+                          }
                         } else {
                           return showDialog(
                             context: context,
@@ -556,10 +591,32 @@ class _MyHomePageState extends State<MyHomePage> {
                                   new FlatButton(
                                     child: new Text("Aceptar"),
                                     onPressed: () async {
-                                      await Hive.initFlutter();
-                                      var box = await Hive.openBox('testBox');
-
+                                      FormularioHive formularioHive =
+                                          FormularioHive(
+                                              numReporte,
+                                              fecha,
+                                              horaSalida.toString(),
+                                              '2',
+                                              direccion,
+                                              delegacion + 1,
+                                              colonia,
+                                              tipoFenomeno + 1,
+                                              tipoServicio + 1,
+                                              departamento + 1,
+                                              numeroUnidad,
+                                              reporteProblematica,
+                                              nombreQuienReporta,
+                                              observaciones,
+                                              ' ',
+                                              ubicacion.latitude.toString(),
+                                              ubicacion.longitude.toString(),
+                                              images64);
+                                      
+                                      await _formularioBox.add(formularioHive);
                                       Navigator.of(context).pop();
+                                      setState(() {
+                                        _formularioBox = _formularioBox;
+                                      });
                                     },
                                   ),
                                 ],
