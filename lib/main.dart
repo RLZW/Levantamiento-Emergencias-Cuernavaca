@@ -3,6 +3,7 @@ import 'dart:io' as io;
 import 'package:levantamiento_incidentes_cuernavaca/screens/formspendientes.dart';
 import 'package:path/path.dart';
 import 'package:async/async.dart';
+import 'package:background_app_bar/background_app_bar.dart';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -23,7 +24,7 @@ void main() async {
   Hive.registerAdapter(FormularioHiveAdapter());
 
   await Hive.initFlutter();
-  await Hive.openBox('formularioBox');
+  await Hive.openBox('formBox');
 
   runApp(
     MyApp(),
@@ -38,7 +39,9 @@ class MyApp extends StatelessWidget {
         theme: ThemeData(
           primarySwatch: Colors.blue,
         ),
-        home: MyHomePage(title: 'Levantamiento Emergencias Cuernavaca'));
+        home: MyHomePage(
+          title: "A;FSDKLJ",
+        ));
   }
 }
 
@@ -63,20 +66,29 @@ class _MyHomePageState extends State<MyHomePage> {
       reporteProblematica,
       nombreQuienReporta,
       observaciones,
-      foto;
+      foto,
+      lista_inspectores = lista_inspectores_ciudadana[0] ;
   int delegacion = 0,
       tipoFenomeno = 0,
       tipoServicio = 0,
       departamento = 0,
+      inspector_bomberos = 0,
+      inspector_bomberos_apoyo = 0,
+      inspector_ciudadania = 0,
+      inspector_ciudadania_apoyo = 0,
       fecha = DateTime.now().millisecondsSinceEpoch;
 
-  LocationData ubicacion;
+  bool bomberosSeleccionados = false;
 
-  ///Guardado Local
+  LocationData ubicacion;
 
   ///Obtener fecha
   DateTime selectedDate = DateTime.now();
   TimeOfDay time = TimeOfDay.now();
+
+  bool seleccionado = true;
+
+  String horaTermino;
 
   //Función para seleccionar la fecha completa, se complementa con la función selectDate la cual nos regresa año, mes y día, esta función añade horas y minutos.
   Future<Null> _selectTime(BuildContext context) async {
@@ -130,7 +142,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Location location = new Location();
   LocationData _locationData;
 
-  Box _formularioBox = Hive.box('formularioBox');
+  Box _formBox = Hive.box('formBox');
 
   ///Variables Image Picker
   List<io.File> images = List<io.File>();
@@ -172,10 +184,15 @@ class _MyHomePageState extends State<MyHomePage> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   @override
   Widget build(BuildContext context) {
+    
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(
-        title: Text("Levantamiento de Incidentes Cuernavaca"),
+        flexibleSpace: BackgroundFlexibleSpaceBar(
+            background: Image.asset(
+          'assets/images/emergencias.jpeg',
+          fit: BoxFit.cover,
+        )),
         actions: <Widget>[
           IconButton(
             icon: Icon(Icons.cloud_upload),
@@ -243,6 +260,15 @@ class _MyHomePageState extends State<MyHomePage> {
                     InputDecoration(labelText: 'Hora de arribo de la unidad'),
                 onSaved: (String value) {
                   horaArribo = value;
+                },
+              ),
+              SizedBox(
+                height: 15,
+              ),
+              TextFormField(
+                decoration: InputDecoration(labelText: 'Hora de término'),
+                onSaved: (String value) {
+                  horaTermino = value;
                 },
               ),
               SizedBox(
@@ -353,11 +379,13 @@ class _MyHomePageState extends State<MyHomePage> {
               DropdownButton<String>(
                 hint: Text('Departamento (necesario)'),
                 isExpanded: true,
-                value: lista_departamentos[departamento],
                 icon: Icon(Icons.arrow_downward),
                 iconSize: 24,
                 elevation: 16,
                 style: TextStyle(color: Colors.deepPurple),
+                value: departamento != null
+                    ? lista_departamentos[departamento]
+                    : null,
                 underline: Container(
                   height: 2,
                   color: Colors.blue,
@@ -365,7 +393,14 @@ class _MyHomePageState extends State<MyHomePage> {
                 onChanged: (String newValue) {
                   setState(() {
                     departamento = lista_departamentos.indexOf(newValue);
+                    seleccionado = true;
+                    if (departamento == 6) {
+                      bomberosSeleccionados = true;
+                    } else {
+                      bomberosSeleccionados = false;
+                    }
                   });
+                  debugPrint(bomberosSeleccionados.toString());
                 },
                 items: lista_departamentos
                     .map<DropdownMenuItem<String>>((String value) {
@@ -378,6 +413,14 @@ class _MyHomePageState extends State<MyHomePage> {
               SizedBox(
                 height: 15,
               ),
+              seleccionado
+                  ? crearDropDownMenuDinamico(
+                      seleccionado, bomberosSeleccionados)
+                  : SizedBox(),
+              seleccionado
+                  ? crearDropDownMenuDinamicoApoyo(
+                      seleccionado, bomberosSeleccionados)
+                  : SizedBox(),
               TextFormField(
                 decoration: InputDecoration(labelText: 'Número de Unidad'),
                 onSaved: (String value) {
@@ -422,7 +465,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     if (ubicacion == null) {
                       return "No se ha obtenido la ubicación aún.";
                     } else {
-                      return 'Ubicación ${ubicacion.latitude},${ubicacion.longitude}';
+                      return 'Ubicación ${ubicacion.longitude},${ubicacion.latitude}';
                     }
                   }()),
                   SizedBox(
@@ -477,8 +520,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                       images64.remove(images64[index]);
                                       print(images64.toString());
 
-                                      setState(() {
-                                      });
+                                      setState(() {});
                                     },
                                     child: Icon(Icons.delete)),
                                 width: 35,
@@ -521,108 +563,287 @@ class _MyHomePageState extends State<MyHomePage> {
                         _formKey.currentState.save();
                         bool isConnected = await checkConectivity();
 
-                        Formulario formulario = Formulario(
-                            numReporte,
-                            fecha,
-                            horaSalida.toString(),
-                            '2',
-                            direccion,
-                            delegacion + 1,
-                            colonia,
-                            tipoFenomeno + 1,
-                            tipoServicio + 1,
-                            departamento + 1,
-                            numeroUnidad,
-                            reporteProblematica,
-                            nombreQuienReporta,
-                            observaciones,
-                            ' ',
-                            ubicacion.latitude.toString(),
-                            ubicacion.longitude.toString());
-                        if (isConnected) {
-                          String url =
-                              'https://services9.arcgis.com/fp5f46XvVGKIUi0R/ArcGIS/rest/services/Levantamiento_Emergencias/FeatureServer/0/addFeatures';
-                          var map = new Map<String, dynamic>();
-                          map['features'] = json.encode(formulario.toJson());
-                          map['rollbackOnFailure'] = 'false';
-                          map['f'] = 'pjson';
-                          map['token'] = '';
-                          debugPrint(json.encode(map));
-                          var response = await http.post(url, body: map);
-                          debugPrint('Response status: ${response.statusCode}');
-                          debugPrint('Response body: ${response.body}');
-                          bool success;
-                          try {
-                            success = json.decode(response.body)["addResults"]
-                                [0]["success"];
-                          } catch (e) {
-                            success = false;
-                          }
-                          if (success) {
-                            _scaffoldKey.currentState.showSnackBar(SnackBar(
-                              content: Text(
-                                'Reporte subido con éxito.',
-                                style: TextStyle(color: Colors.white),
-                              ),
-                              backgroundColor: Colors.green,
-                            ));
-                            if (images.length != 0) {
-                              int objectId =
-                                  json.decode(response.body)["addResults"][0]
-                                      ["objectId"];
-                              String urlImage =
-                                  'https://services9.arcgis.com/fp5f46XvVGKIUi0R/arcgis/rest/services/Levantamiento_Emergencias/FeatureServer/0/$objectId/addAttachment';
-                              debugPrint(urlImage);
-                              for (var image in images) {
-                                uploadImage(image, urlImage);
-                              }
-                            }
-                          }
-                        } else {
+                        if (ubicacion == null) {
                           return showDialog(
                             context: context,
                             builder: (BuildContext context) {
                               return AlertDialog(
-                                title: new Text("No hay internet"),
+                                title: new Text("No existe ubicación"),
                                 content: new Text(
-                                    "Parece ser que no estas conectado a internet, tu reporte y su información será guardado en el dispostivo y podrá ser subido una vez que cuentes con internet."),
+                                    "Parece ser que no has presionado el botón Localizarme por lo que no hemos podido detectar tu ubicación"),
                                 actions: <Widget>[
                                   // usually buttons at the bottom of the dialog
                                   new FlatButton(
                                     child: new Text("Aceptar"),
                                     onPressed: () async {
-                                      FormularioHive formularioHive =
-                                          FormularioHive(
-                                              numReporte,
-                                              fecha,
-                                              horaSalida.toString(),
-                                              '2',
-                                              direccion,
-                                              delegacion + 1,
-                                              colonia,
-                                              tipoFenomeno + 1,
-                                              tipoServicio + 1,
-                                              departamento + 1,
-                                              numeroUnidad,
-                                              reporteProblematica,
-                                              nombreQuienReporta,
-                                              observaciones,
-                                              ' ',
-                                              ubicacion.latitude.toString(),
-                                              ubicacion.longitude.toString(),
-                                              images64);
-                                      
-                                      await _formularioBox.add(formularioHive);
                                       Navigator.of(context).pop();
-                                      setState(() {
-                                        _formularioBox = _formularioBox;
-                                      });
+                                      setState(() {});
                                     },
                                   ),
                                 ],
                               );
                             },
                           );
+                        } else {
+                          if (true) {
+                            if (bomberosSeleccionados) {
+                              Formulario formulario = Formulario(
+                                  numReporte,
+                                  horaSalida,
+                                  horaArribo,
+                                  horaTermino,
+                                  direccion,
+                                  colonia,
+                                  numeroUnidad,
+                                  reporteProblematica,
+                                  nombreQuienReporta,
+                                  observaciones,
+                                  ' ',
+                                  ubicacion.longitude.toString(),
+                                  ubicacion.latitude.toString(),
+                                  delegacion ,
+                                  tipoFenomeno ,
+                                  tipoServicio ,
+                                  departamento ,
+                                  fecha,
+                                  images,
+                                  null,
+                                  inspector_bomberos ,
+                                  null,
+                                  inspector_bomberos_apoyo ,
+                                  lista_inspectores);
+
+                              var map = new Map<String, dynamic>();
+                              map['features'] =
+                                  json.encode(formulario.toJson());
+                              if (isConnected) {
+                                //
+                                String url =
+                                    'https://services9.arcgis.com/fp5f46XvVGKIUi0R/arcgis/rest/services/Events_Cuernavaca/FeatureServer/0/addFeatures';
+                                map['features'] =
+                                    json.encode(formulario.toJson());
+                                map['rollbackOnFailure'] = 'false';
+                                map['f'] = 'pjson';
+                                map['token'] = '';
+                                debugPrint(json.encode(map));
+                                var response = await http.post(url, body: map);
+
+                                debugPrint(
+                                    'Response status: ${response.statusCode}');
+                                debugPrint('Response body: ${response.body}');
+                                bool success;
+                                try {
+                                  success =
+                                      json.decode(response.body)["addResults"]
+                                          [0]["success"];
+                                } catch (e) {
+                                  success = false;
+                                }
+                                if (success) {
+                                  _scaffoldKey.currentState
+                                      .showSnackBar(SnackBar(
+                                    content: Text(
+                                      'Reporte subido con éxito.',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                    backgroundColor: Colors.green,
+                                  ));
+                                  if (images.length != 0) {
+                                    int objectId =
+                                        json.decode(response.body)["addResults"]
+                                            [0]["objectId"];
+                                    String urlImage =
+                                        'https://services9.arcgis.com/fp5f46XvVGKIUi0R/arcgis/rest/services/Events_Cuernavaca/FeatureServer/0/$objectId/addAttachment';
+                                    debugPrint(urlImage);
+                                    for (var image in images) {
+                                      uploadImage(image, urlImage);
+                                    }
+                                  }
+                                }
+                              } else {
+                                return showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return AlertDialog(
+                                      title: new Text("No hay internet"),
+                                      content: new Text(
+                                          "Parece ser que no estas conectado a internet, tu reporte y su información será guardado en el dispostivo y podrá ser subido una vez que cuentes con internet."),
+                                      actions: <Widget>[
+                                        // usually buttons at the bottom of the dialog
+                                        new FlatButton(
+                                          child: new Text("Aceptar"),
+                                          onPressed: () async {
+                                            FormularioHive formularioHive =
+                                                FormularioHive(
+                                                    numReporte,
+                                                    horaSalida,
+                                                    horaArribo,
+                                                    horaTermino,
+                                                    direccion,
+                                                    colonia,
+                                                    numeroUnidad,
+                                                    reporteProblematica,
+                                                    nombreQuienReporta,
+                                                    observaciones,
+                                                    0,
+                                                    ubicacion.longitude,
+                                                    ubicacion.latitude,
+                                                    delegacion ,
+                                                    tipoFenomeno ,
+                                                    tipoServicio ,
+                                                    departamento ,
+                                                    fecha,
+                                                    images64,
+                                                    null,
+                                                    inspector_bomberos ,
+                                                    null,
+                                                    inspector_bomberos_apoyo +
+                                                        1,
+                                                    lista_inspectores);
+
+                                            await _formBox
+                                                .add(formularioHive);
+                                            Navigator.of(context).pop();
+                                            setState(() {
+                                              _formBox = _formBox;
+                                            });
+                                          },
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                              }
+                            } else {
+                              Formulario formulario = Formulario(
+                                  numReporte,
+                                  horaSalida,
+                                  horaArribo,
+                                  horaTermino,
+                                  direccion,
+                                  colonia,
+                                  numeroUnidad,
+                                  reporteProblematica,
+                                  nombreQuienReporta,
+                                  observaciones,
+                                  ' ',
+                                  ubicacion.longitude.toString(),
+                                  ubicacion.latitude.toString(),
+                                  delegacion ,
+                                  tipoFenomeno ,
+                                  tipoServicio ,
+                                  departamento ,
+                                  fecha,
+                                  images,
+                                  inspector_ciudadania ,
+                                  null,
+                                  inspector_ciudadania_apoyo ,
+                                  null,
+                                  lista_inspectores);
+
+                              var map = new Map<String, dynamic>();
+                              map['features'] =
+                                  json.encode(formulario.toJson());
+                              if (isConnected) {
+                                //
+                                String url =
+                                    'https://services9.arcgis.com/fp5f46XvVGKIUi0R/arcgis/rest/services/Events_Cuernavaca/FeatureServer/0/addFeatures';
+                                map['features'] =
+                                    json.encode(formulario.toJson());
+                                map['rollbackOnFailure'] = 'false';
+                                map['f'] = 'pjson';
+                                map['token'] = '';
+                                debugPrint(json.encode(map));
+                                var response = await http.post(url, body: map);
+
+                                debugPrint(
+                                    'Response status: ${response.statusCode}');
+                                debugPrint('Response body: ${response.body}');
+                                bool success;
+                                try {
+                                  success =
+                                      json.decode(response.body)["addResults"]
+                                          [0]["success"];
+                                } catch (e) {
+                                  success = false;
+                                }
+                                if (success) {
+                                  _scaffoldKey.currentState
+                                      .showSnackBar(SnackBar(
+                                    content: Text(
+                                      'Reporte subido con éxito.',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                    backgroundColor: Colors.green,
+                                  ));
+                                  if (images.length != 0) {
+                                    int objectId =
+                                        json.decode(response.body)["addResults"]
+                                            [0]["objectId"];
+                                    String urlImage =
+                                        'https://services9.arcgis.com/fp5f46XvVGKIUi0R/arcgis/rest/services/Events_Cuernavaca/FeatureServer/0/$objectId/addAttachment';
+                                    debugPrint(urlImage);
+                                    for (var image in images) {
+                                      uploadImage(image, urlImage);
+                                    }
+                                  }
+                                }
+                              } else {
+                                return showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return AlertDialog(
+                                      title: new Text("No hay internet"),
+                                      content: new Text(
+                                          "Parece ser que no estas conectado a internet, tu reporte y su información será guardado en el dispostivo y podrá ser subido una vez que cuentes con internet."),
+                                      actions: <Widget>[
+                                        // usually buttons at the bottom of the dialog
+                                        new FlatButton(
+                                          child: new Text("Aceptar"),
+                                          onPressed: () async {
+                                            FormularioHive formularioHive =
+                                                FormularioHive(
+                                                    numReporte,
+                                                    horaSalida,
+                                                    horaArribo,
+                                                    horaTermino,
+                                                    direccion,
+                                                    colonia,
+                                                    numeroUnidad,
+                                                    reporteProblematica,
+                                                    nombreQuienReporta,
+                                                    observaciones,
+                                                    0,
+                                                    ubicacion.longitude,
+                                                    ubicacion.latitude,
+                                                    delegacion ,
+                                                    tipoFenomeno ,
+                                                    tipoServicio ,
+                                                    departamento ,
+                                                    fecha,
+                                                    images64,
+                                                    inspector_ciudadania ,
+                                                    null,
+                                                    inspector_ciudadania_apoyo +
+                                                        1,
+                                                    null,
+                                                    lista_inspectores);
+
+                                            await _formBox
+                                                .add(formularioHive);
+                                            Navigator.of(context).pop();
+                                            setState(() {
+                                              _formBox = _formBox;
+                                            });
+                                          },
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                              }
+                            }
+                          } else {} //fINAL ELSE
                         }
                       }
                     },
@@ -635,5 +856,131 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       ),
     );
+  }
+
+  crearDropDownMenuDinamico(bool seleccionado, bool bomberosSeleccionados) {
+    if (seleccionado) {
+      if (bomberosSeleccionados) {
+        return (DropdownButton<String>(
+          hint: Text('Inspector qué levantó reporte (Bomberos)'),
+          isExpanded: true,
+          value: lista_inspectores_bomberos[inspector_bomberos],
+          icon: Icon(Icons.arrow_downward),
+          iconSize: 24,
+          elevation: 16,
+          style: TextStyle(color: Colors.deepPurple),
+          underline: Container(
+            height: 2,
+            color: Colors.blue,
+          ),
+          onChanged: (String newValue) {
+            setState(() {
+              inspector_bomberos = lista_inspectores_bomberos.indexOf(newValue);
+            });
+          },
+          items: lista_inspectores_bomberos
+              .map<DropdownMenuItem<String>>((String value) {
+            return DropdownMenuItem<String>(
+              value: value,
+              child: Text(value),
+            );
+          }).toList(),
+        ));
+      } else {
+        return (DropdownButton<String>(
+          hint: Text('Inspector qué levantó reporte (Ciudadania)'),
+          isExpanded: true,
+          value: lista_inspectores_ciudadana[inspector_ciudadania],
+          icon: Icon(Icons.arrow_downward),
+          iconSize: 24,
+          elevation: 16,
+          style: TextStyle(color: Colors.deepPurple),
+          underline: Container(
+            height: 2,
+            color: Colors.blue,
+          ),
+          onChanged: (String newValue) {
+            setState(() {
+              inspector_ciudadania =
+                  lista_inspectores_ciudadana.indexOf(newValue);
+            });
+          },
+          items: lista_inspectores_ciudadana
+              .map<DropdownMenuItem<String>>((String value) {
+            return DropdownMenuItem<String>(
+              value: value,
+              child: Text(value),
+            );
+          }).toList(),
+        ));
+      }
+    } else {
+      return (SizedBox());
+    }
+  }
+
+  crearDropDownMenuDinamicoApoyo(
+      bool seleccionado, bool bomberosSeleccionados) {
+    if (seleccionado) {
+      if (bomberosSeleccionados) {
+        return (DropdownButton<String>(
+          hint: Text('Inspector de apoyo (Bomberos)'),
+          isExpanded: true,
+          value: lista_inspectores_bomberos[inspector_bomberos_apoyo],
+          icon: Icon(Icons.arrow_downward),
+          iconSize: 24,
+          elevation: 16,
+          style: TextStyle(color: Colors.deepPurple),
+          underline: Container(
+            height: 2,
+            color: Colors.blue,
+          ),
+          onChanged: (String newValue) {
+            setState(() {
+              lista_inspectores = newValue;
+              inspector_bomberos_apoyo =
+                  lista_inspectores_bomberos.indexOf(newValue);
+            });
+          },
+          items: lista_inspectores_bomberos
+              .map<DropdownMenuItem<String>>((String value) {
+            return DropdownMenuItem<String>(
+              value: value,
+              child: Text(value),
+            );
+          }).toList(),
+        ));
+      } else {
+        return (DropdownButton<String>(
+          hint: Text('Inspector qué levantó reporte (Ciudadania)'),
+          isExpanded: true,
+          value: lista_inspectores_ciudadana[inspector_ciudadania_apoyo],
+          icon: Icon(Icons.arrow_downward),
+          iconSize: 24,
+          elevation: 16,
+          style: TextStyle(color: Colors.deepPurple),
+          underline: Container(
+            height: 2,
+            color: Colors.blue,
+          ),
+          onChanged: (String newValue) {
+            setState(() {
+              lista_inspectores = newValue;
+              inspector_ciudadania_apoyo =
+                  lista_inspectores_ciudadana.indexOf(newValue);
+            });
+          },
+          items: lista_inspectores_ciudadana
+              .map<DropdownMenuItem<String>>((String value) {
+            return DropdownMenuItem<String>(
+              value: value,
+              child: Text(value),
+            );
+          }).toList(),
+        ));
+      }
+    } else {
+      return (SizedBox());
+    }
   }
 }
