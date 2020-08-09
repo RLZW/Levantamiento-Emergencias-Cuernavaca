@@ -41,8 +41,7 @@ dependencies:
   hive_generator: ^0.7.0+2
   background_app_bar: ^1.0.2
 
-dependency_overrides:
-  dartx: ^0.3.0
+
 
 dev_dependencies:
   build_runner: ^1.10.0

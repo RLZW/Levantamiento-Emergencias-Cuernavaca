@@ -67,7 +67,7 @@ class _MyHomePageState extends State<MyHomePage> {
       nombreQuienReporta,
       observaciones,
       foto,
-      lista_inspectores = lista_inspectores_ciudadana[0] ;
+      lista_inspectores = lista_inspectores_ciudadana[0];
   int delegacion = 0,
       tipoFenomeno = 0,
       tipoServicio = 0,
@@ -184,7 +184,6 @@ class _MyHomePageState extends State<MyHomePage> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   @override
   Widget build(BuildContext context) {
-    
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(
@@ -235,7 +234,7 @@ class _MyHomePageState extends State<MyHomePage> {
               Row(
                 children: <Widget>[
                   Text(
-                      "Fecha seleccionada: ${selectedDate.day}-${selectedDate.month}-${selectedDate.year} ${selectedDate.hour}:${selectedDate.minute}"),
+                      "Fecha seleccionada: ${selectedDate.day}/${selectedDate.month}/${selectedDate.year} ${selectedDate.hour}:${selectedDate.minute}"),
                   SizedBox(
                     width: 20.0,
                   ),
@@ -292,6 +291,11 @@ class _MyHomePageState extends State<MyHomePage> {
               SizedBox(
                 height: 15,
               ),
+              Text(
+                'Delegación',
+                style: TextStyle(
+                    color: Color.fromRGBO(1, 1, 1, 0.6), fontSize: 16),
+              ),
               DropdownButton<String>(
                 hint: Text('Seleccionar Delegación'),
                 isExpanded: true,
@@ -319,6 +323,11 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
               SizedBox(
                 height: 15,
+              ),
+              Text(
+                'Tipo de Fenómeno',
+                style: TextStyle(
+                    color: Color.fromRGBO(1, 1, 1, 0.6), fontSize: 16),
               ),
               DropdownButton<String>(
                 hint: Text('Tipo de Fenómeno'),
@@ -348,6 +357,11 @@ class _MyHomePageState extends State<MyHomePage> {
               SizedBox(
                 height: 15,
               ),
+              Text(
+                'Tipo de servicio',
+                style: TextStyle(
+                    color: Color.fromRGBO(1, 1, 1, 0.6), fontSize: 16),
+              ),
               DropdownButton<String>(
                 hint: Text('Tipo de servicio'),
                 isExpanded: true,
@@ -375,6 +389,11 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
               SizedBox(
                 height: 15,
+              ),
+              Text(
+                'Departamento (Obligatorio)',
+                style: TextStyle(
+                    color: Color.fromRGBO(1, 1, 1, 0.6), fontSize: 16),
               ),
               DropdownButton<String>(
                 hint: Text('Departamento (necesario)'),
@@ -413,10 +432,23 @@ class _MyHomePageState extends State<MyHomePage> {
               SizedBox(
                 height: 15,
               ),
+              Text(
+                'Inspector',
+                style: TextStyle(
+                    color: Color.fromRGBO(1, 1, 1, 0.6), fontSize: 16),
+              ),
               seleccionado
                   ? crearDropDownMenuDinamico(
                       seleccionado, bomberosSeleccionados)
                   : SizedBox(),
+              SizedBox(
+                height: 15,
+              ),
+              Text(
+                'Subinspector',
+                style: TextStyle(
+                    color: Color.fromRGBO(1, 1, 1, 0.6), fontSize: 16),
+              ),
               seleccionado
                   ? crearDropDownMenuDinamicoApoyo(
                       seleccionado, bomberosSeleccionados)
@@ -459,7 +491,7 @@ class _MyHomePageState extends State<MyHomePage> {
               SizedBox(
                 height: 15,
               ),
-              Row(
+              Column(
                 children: <Widget>[
                   Text(() {
                     if (ubicacion == null) {
@@ -468,23 +500,30 @@ class _MyHomePageState extends State<MyHomePage> {
                       return 'Ubicación ${ubicacion.longitude},${ubicacion.latitude}';
                     }
                   }()),
-                  SizedBox(
-                    width: 20.0,
-                  ),
-                  RaisedButton(
-                    onPressed: () async {
-                      if (await checkLocationServiceAndPermissions(location)) {
-                        _locationData = await location.getLocation();
-                        setState(() {
-                          ubicacion = _locationData;
-                        });
-                        _scaffoldKey.currentState.showSnackBar(SnackBar(
-                            content: Text(
-                                'Ubicación Actualizada ${_locationData.longitude} ${_locationData.latitude}')));
-                      }
-                    },
-                    child: Text('Localizarme'),
-                  ),
+                ],
+              ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Padding(
+                    padding: EdgeInsets.only(right: 20),
+                    child: RaisedButton(
+                      onPressed: () async {
+                        if (await checkLocationServiceAndPermissions(
+                            location)) {
+                          _locationData = await location.getLocation();
+                          setState(() {
+                            ubicacion = _locationData;
+                          });
+                          _scaffoldKey.currentState.showSnackBar(SnackBar(
+                              content: Text(
+                                  'Ubicación Actualizada ${_locationData.longitude} ${_locationData.latitude}')));
+                        }
+                      },
+                      child: Text('Localizarme'),
+                    ),
+                  )
                 ],
               ),
               SizedBox(
@@ -601,16 +640,16 @@ class _MyHomePageState extends State<MyHomePage> {
                                   ' ',
                                   ubicacion.longitude.toString(),
                                   ubicacion.latitude.toString(),
-                                  delegacion ,
-                                  tipoFenomeno ,
-                                  tipoServicio ,
-                                  departamento ,
+                                  delegacion,
+                                  tipoFenomeno,
+                                  tipoServicio,
+                                  departamento,
                                   fecha,
                                   images,
                                   null,
-                                  inspector_bomberos ,
+                                  inspector_bomberos,
                                   null,
-                                  inspector_bomberos_apoyo ,
+                                  inspector_bomberos_apoyo,
                                   lista_inspectores);
 
                               var map = new Map<String, dynamic>();
@@ -688,21 +727,20 @@ class _MyHomePageState extends State<MyHomePage> {
                                                     0,
                                                     ubicacion.longitude,
                                                     ubicacion.latitude,
-                                                    delegacion ,
-                                                    tipoFenomeno ,
-                                                    tipoServicio ,
-                                                    departamento ,
+                                                    delegacion,
+                                                    tipoFenomeno,
+                                                    tipoServicio,
+                                                    departamento,
                                                     fecha,
                                                     images64,
                                                     null,
-                                                    inspector_bomberos ,
+                                                    inspector_bomberos,
                                                     null,
                                                     inspector_bomberos_apoyo +
                                                         1,
                                                     lista_inspectores);
 
-                                            await _formBox
-                                                .add(formularioHive);
+                                            await _formBox.add(formularioHive);
                                             Navigator.of(context).pop();
                                             setState(() {
                                               _formBox = _formBox;
@@ -729,15 +767,15 @@ class _MyHomePageState extends State<MyHomePage> {
                                   ' ',
                                   ubicacion.longitude.toString(),
                                   ubicacion.latitude.toString(),
-                                  delegacion ,
-                                  tipoFenomeno ,
-                                  tipoServicio ,
-                                  departamento ,
+                                  delegacion,
+                                  tipoFenomeno,
+                                  tipoServicio,
+                                  departamento,
                                   fecha,
                                   images,
-                                  inspector_ciudadania ,
+                                  inspector_ciudadania,
                                   null,
-                                  inspector_ciudadania_apoyo ,
+                                  inspector_ciudadania_apoyo,
                                   null,
                                   lista_inspectores);
 
@@ -816,21 +854,20 @@ class _MyHomePageState extends State<MyHomePage> {
                                                     0,
                                                     ubicacion.longitude,
                                                     ubicacion.latitude,
-                                                    delegacion ,
-                                                    tipoFenomeno ,
-                                                    tipoServicio ,
-                                                    departamento ,
+                                                    delegacion,
+                                                    tipoFenomeno,
+                                                    tipoServicio,
+                                                    departamento,
                                                     fecha,
                                                     images64,
-                                                    inspector_ciudadania ,
+                                                    inspector_ciudadania,
                                                     null,
                                                     inspector_ciudadania_apoyo +
                                                         1,
                                                     null,
                                                     lista_inspectores);
 
-                                            await _formBox
-                                                .add(formularioHive);
+                                            await _formBox.add(formularioHive);
                                             Navigator.of(context).pop();
                                             setState(() {
                                               _formBox = _formBox;
