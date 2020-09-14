@@ -110,7 +110,7 @@ const lista_departamentos = <String>[
 ];
 
 const lista_inspectores_ciudadana = <String>[
-  'Seleccionar...',
+  'Seleccionar…',
   'Lic. Gonzalo Alberto Barquin Granados',
   'Juan José Diaz Flores',
   'Luis Fernando Delgado Villalpando',
@@ -133,7 +133,9 @@ const lista_inspectores_ciudadana = <String>[
   'Victor Manuel Salgado',
   'Luis Omar Garcia Santamaria',
   'Marcos Benigno Neri Argandar',
-  'Rogelio Juarez López',
+  'Lino Salinas Fausto',
+  'Guzmán Colín Raúl Alejandro',
+  'Breton Perez Luis Noe'
 ];
 
 const lista_inspectores_bomberos = <String>[
@@ -196,4 +198,33 @@ const lista_inspectores_bomberos = <String>[
   'Vara Vargas César',
   'Vázquez Corral Carlos',
   'Orihuela Marin Carlos Javier',
+  'Amador Herrera Felipe',
+  'Barragán Martínez Sergio Antonio',
+  'Bautista Flores Arturo',
+  'Campos Álvarez Jorge Ivan',
+  'Castañeda Hernández Ruben',
+  'Cortes Salgado Ignacio',
+  'Cristerna Zagal Juan Carlos',
+  'Díaz Martínez Christian Omar',
+  'Domínguez Gómez Fernando',
+  'Flores Martínez Francisco Manuel',
+  'Flores Martínez Francisco Manuel',
+  'García Escobar Andrés Honey',
+  'García García Manuel Ramón',
+  'García Rodríguez José Iván',
+  'Girón Dávila Daniel',
+  'González Gómez Jorge ',
+  'Hernández Monroy Ricardo ',
+  'Julián García Ricardo',
+  'Manzanarez Millan Abel',
+  'Ortíz Bahena Benjamín',
+  'Quintana Morales Victor Manuel',
+  'Ramos González Hugo',
+  'Ramos González Moisés',
+  'Ramos González Raúl',
+  'Robles Díaz Francisco Manuel',
+  'Rojas Estrada Alejandro',
+  'Rosas Axomulco Bulmaro',
+  'Sánchez Rojas Freddy',
+  'Vega Pérez Gabriel',
 ];

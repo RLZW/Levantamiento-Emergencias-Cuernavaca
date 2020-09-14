@@ -12,6 +12,7 @@ import 'package:levantamiento_incidentes_cuernavaca/models/formulario.dart';
 import 'package:levantamiento_incidentes_cuernavaca/models/formulariohive.model.dart';
 import 'package:location/location.dart';
 import 'package:http/http.dart' as http;
+import 'package:searchable_dropdown/searchable_dropdown.dart';
 
 import 'Utils/checkConectivity.dart';
 import 'Utils/checkLocationServicesAndPermissions.dart';
@@ -362,23 +363,10 @@ class _MyHomePageState extends State<MyHomePage> {
                 style: TextStyle(
                     color: Color.fromRGBO(1, 1, 1, 0.6), fontSize: 16),
               ),
-              DropdownButton<String>(
-                hint: Text('Tipo de servicio'),
+              SearchableDropdown.single(
+                displayClearIcon: false,
                 isExpanded: true,
                 value: lista_tipo_servicios[tipoServicio],
-                icon: Icon(Icons.arrow_downward),
-                iconSize: 24,
-                elevation: 16,
-                style: TextStyle(color: Colors.deepPurple),
-                underline: Container(
-                  height: 2,
-                  color: Colors.blue,
-                ),
-                onChanged: (String newValue) {
-                  setState(() {
-                    tipoServicio = lista_tipo_servicios.indexOf(newValue);
-                  });
-                },
                 items: lista_tipo_servicios
                     .map<DropdownMenuItem<String>>((String value) {
                   return DropdownMenuItem<String>(
@@ -386,6 +374,11 @@ class _MyHomePageState extends State<MyHomePage> {
                     child: Text(value),
                   );
                 }).toList(),
+                onChanged: (String newValue) {
+                  setState(() {
+                    tipoServicio = lista_tipo_servicios.indexOf(newValue);
+                  });
+                },
               ),
               SizedBox(
                 height: 15,
